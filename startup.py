@@ -1,6 +1,6 @@
 from requests import get
 from bs4 import BeautifulSoup
-from utility import *
+from utility import format_company_name,empty_file
 import googlemaps
 import pandas
 import math
@@ -8,7 +8,11 @@ from folium import Map, FeatureGroup, CircleMarker
 import math
 import webbrowser
 
-gmaps = googlemaps.Client(key='')# add your google map key here in order to script to work
+key = None # replace key with actual key for script to get data from google geocode API
+
+if key != None:
+    gmaps = googlemaps.Client(key=key)
+
 data_filename="data.csv"
 map_name = 'index.html'
 
@@ -49,6 +53,8 @@ def get_google_geo():
         lambda s: s[0]['place_id'] if s != None else None)
     df["formatted_address"] = df.gmap.apply(
         lambda s: s[0]['formatted_address'] if s != None else None)
+
+    empty_file('op.csv')    
     df.to_csv(path_or_buf='op.csv', sep='|')
     return df   
 
@@ -57,7 +63,7 @@ def compute_map(df):
     lng = list(df['lng'])
     company_name = list(df['company_name'])
 
-    map = Map(location=[15.2993, 74.1240], zoom_start=6, tiles="Mapbox Bright")
+    map = Map(location=[15.2993, 74.1240], zoom_start=10)
     fgv = FeatureGroup()
     for lt, ln, name in zip(lat, lng, company_name):
         if not math.isnan(lt):
@@ -70,9 +76,12 @@ def compute_map(df):
 
 
 def main():
-    # scarp_company_data()
-    # df = get_google_geo()
-    df = pandas.read_csv('op.csv',delimiter='|')
+    if key != None:
+        scarp_company_data()
+        df = get_google_geo()
+    else:
+        df = pandas.read_csv('op.csv',delimiter='|')
+
     compute_map(df)
     webbrowser.open(map_name,new=2)
 
